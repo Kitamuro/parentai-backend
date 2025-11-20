@@ -4,6 +4,7 @@ import ai.parent.parentaibackend.baby.Baby;
 import ai.parent.parentaibackend.baby.BabyRepository;
 import ai.parent.parentaibackend.common.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.diaper.dto.CreateDiaperEntryRequest;
+import ai.parent.parentaibackend.user.CurrentUserService;
 import ai.parent.parentaibackend.user.User;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
