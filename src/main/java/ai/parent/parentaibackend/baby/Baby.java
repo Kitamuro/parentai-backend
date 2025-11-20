@@ -1,5 +1,6 @@
 package ai.parent.parentaibackend.baby;
 
+import ai.parent.parentaibackend.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,4 +28,8 @@ public class Baby {
     private String gender;
 
     private String notes;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id")
+    private User user;
 }

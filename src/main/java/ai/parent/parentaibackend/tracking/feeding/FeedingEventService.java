@@ -2,7 +2,9 @@ package ai.parent.parentaibackend.tracking.feeding;
 
 import ai.parent.parentaibackend.baby.Baby;
 import ai.parent.parentaibackend.baby.BabyRepository;
+import ai.parent.parentaibackend.common.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.feeding.dto.CreateFeedingEventRequest;
+import ai.parent.parentaibackend.user.User;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,18 +18,22 @@ public class FeedingEventService {
 
     private final BabyRepository babyRepository;
     private final FeedingEventRepository feedingEventRepository;
+    private final CurrentUserService currentUserService;
 
     public FeedingEvent createFeedingEvent(Long babyId, CreateFeedingEventRequest request) {
-        Optional<Baby> babyOpt = babyRepository.findById(babyId);
-        if (babyOpt.isEmpty()) {
-            return null; // сигнал контроллеру вернуть 404
-        }
+        User currentUser = currentUserService.getCurrentUserOrThrow();
 
-        if (request.getStartTime() == null || request.getType() == null) {
-            throw new IllegalArgumentException("startTime and type are required");
-        }
+        Baby baby = babyRepository.findByIdAndUser(babyId, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Ребёнок с id=" + babyId + " не найден или недоступен для текущего пользователя"
+                ));
 
-        Baby baby = babyOpt.get();
+        if (request.getStartTime() == null) {
+            throw new IllegalArgumentException("Поле 'startTime' обязательно");
+        }
+        if (request.getType() == null) {
+            throw new IllegalArgumentException("Поле 'type' обязательно (BREAST_LEFT/BREAST_RIGHT/FORMULA/SOLID)");
+        }
 
         FeedingEvent event = new FeedingEvent();
         event.setBaby(baby);

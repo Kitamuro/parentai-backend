@@ -2,7 +2,9 @@ package ai.parent.parentaibackend.tracking.diaper;
 
 import ai.parent.parentaibackend.baby.Baby;
 import ai.parent.parentaibackend.baby.BabyRepository;
+import ai.parent.parentaibackend.common.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.diaper.dto.CreateDiaperEntryRequest;
+import ai.parent.parentaibackend.user.User;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,18 +18,22 @@ public class DiaperEntryService {
 
     private final BabyRepository babyRepository;
     private final DiaperEntryRepository diaperEntryRepository;
+    private final CurrentUserService currentUserService;
 
     public DiaperEntry createDiaperEntry(Long babyId, CreateDiaperEntryRequest request) {
-        Optional<Baby> babyOpt = babyRepository.findById(babyId);
-        if (babyOpt.isEmpty()) {
-            return null; // baby не найден
-        }
+        User currentUser = currentUserService.getCurrentUserOrThrow();
 
-        if (request.getTime() == null || request.getType() == null) {
-            throw new IllegalArgumentException("time and type are required");
-        }
+        Baby baby = babyRepository.findByIdAndUser(babyId, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Ребёнок с id=" + babyId + " не найден или недоступен для текущего пользователя"
+                ));
 
-        Baby baby = babyOpt.get();
+        if (request.getTime() == null) {
+            throw new IllegalArgumentException("Поле 'time' обязательно");
+        }
+        if (request.getType() == null) {
+            throw new IllegalArgumentException("Поле 'type' обязательно (WET/STOOL/MIXED)");
+        }
 
         DiaperEntry entry = new DiaperEntry();
         entry.setBaby(baby);

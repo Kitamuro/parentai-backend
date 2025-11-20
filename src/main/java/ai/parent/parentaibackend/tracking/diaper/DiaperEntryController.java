@@ -1,8 +1,11 @@
 package ai.parent.parentaibackend.tracking.diaper;
 
+import ai.parent.parentaibackend.common.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.diaper.dto.CreateDiaperEntryRequest;
+import ai.parent.parentaibackend.tracking.feeding.FeedingEvent;
 import lombok.AllArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,10 +27,9 @@ public class DiaperEntryController {
     ) {
         try {
             DiaperEntry saved = diaperEntryService.createDiaperEntry(babyId, request);
-            if (saved == null) {
-                return ResponseEntity.notFound().build(); // baby не найден
-            }
             return ResponseEntity.ok(saved);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

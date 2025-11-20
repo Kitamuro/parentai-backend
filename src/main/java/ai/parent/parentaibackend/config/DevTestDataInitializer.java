@@ -14,9 +14,9 @@ import ai.parent.parentaibackend.tracking.sleep.SleepType;
 import ai.parent.parentaibackend.user.User;
 import ai.parent.parentaibackend.user.UserRepository;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
@@ -53,6 +53,7 @@ public class DevTestDataInitializer {
             Baby baby;
             if (babyRepository.count() == 0) {
                 baby = new Baby();
+                baby.setUser(user);
                 baby.setName("Мия");
                 baby.setDateOfBirth(LocalDate.now().minusMonths(9));
                 baby.setGender("FEMALE");

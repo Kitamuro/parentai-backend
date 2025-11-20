@@ -2,10 +2,12 @@ package ai.parent.parentaibackend.tracking.feeding;
 
 import ai.parent.parentaibackend.baby.Baby;
 import ai.parent.parentaibackend.baby.BabyRepository;
+import ai.parent.parentaibackend.common.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.feeding.dto.CreateFeedingEventRequest;
 import ai.parent.parentaibackend.tracking.feeding.dto.FeedingSummaryResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,10 +31,9 @@ public class FeedingEventController {
     ) {
         try {
             FeedingEvent saved = feedingEventService.createFeedingEvent(babyId, request);
-            if (saved == null) {
-                return ResponseEntity.notFound().build(); // baby не найден
-            }
             return ResponseEntity.ok(saved);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
