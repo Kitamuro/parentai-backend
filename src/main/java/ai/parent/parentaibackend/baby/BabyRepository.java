@@ -1,0 +1,6 @@
+package ai.parent.parentaibackend.baby;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface BabyRepository extends JpaRepository<Baby, Long> {
+}
