@@ -2,7 +2,7 @@ package ai.parent.parentaibackend.tracking.sleep;
 
 import ai.parent.parentaibackend.baby.Baby;
 import ai.parent.parentaibackend.baby.BabyRepository;
-import ai.parent.parentaibackend.common.ResourceNotFoundException;
+import ai.parent.parentaibackend.common.exception.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.sleep.dto.CreateSleepEventRequest;
 import ai.parent.parentaibackend.user.CurrentUserService;
 import ai.parent.parentaibackend.user.User;

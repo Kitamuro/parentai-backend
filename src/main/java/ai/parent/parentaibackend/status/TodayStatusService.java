@@ -2,26 +2,28 @@ package ai.parent.parentaibackend.status;
 
 import ai.parent.parentaibackend.baby.Baby;
 import ai.parent.parentaibackend.baby.BabyRepository;
-import ai.parent.parentaibackend.tracking.diaper.DiaperAnalyticsService;
+import ai.parent.parentaibackend.common.exception.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.diaper.DiaperEntry;
 import ai.parent.parentaibackend.tracking.diaper.DiaperEntryRepository;
 import ai.parent.parentaibackend.tracking.diaper.dto.DiaperSummaryResponse;
-import ai.parent.parentaibackend.tracking.feeding.FeedingAnalyticsService;
+import ai.parent.parentaibackend.tracking.feeding.dto.FeedingSummaryResponse;
+import ai.parent.parentaibackend.tracking.sleep.dto.SleepSummaryResponse;
 import ai.parent.parentaibackend.tracking.feeding.FeedingEvent;
 import ai.parent.parentaibackend.tracking.feeding.FeedingEventRepository;
-import ai.parent.parentaibackend.tracking.feeding.dto.FeedingSummaryResponse;
-import ai.parent.parentaibackend.tracking.sleep.SleepAnalyticsService;
 import ai.parent.parentaibackend.tracking.sleep.SleepEvent;
 import ai.parent.parentaibackend.tracking.sleep.SleepEventRepository;
-import ai.parent.parentaibackend.tracking.sleep.dto.SleepSummaryResponse;
-import lombok.AllArgsConstructor;
+import ai.parent.parentaibackend.tracking.sleep.SleepAnalyticsService;
+import ai.parent.parentaibackend.tracking.feeding.FeedingAnalyticsService;
+import ai.parent.parentaibackend.tracking.diaper.DiaperAnalyticsService;
+import ai.parent.parentaibackend.user.CurrentUserService;
+import ai.parent.parentaibackend.user.User;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 
 @Service
-@AllArgsConstructor
 public class TodayStatusService {
+
     private final BabyRepository babyRepository;
     private final SleepAnalyticsService sleepAnalyticsService;
     private final FeedingAnalyticsService feedingAnalyticsService;
@@ -29,16 +31,37 @@ public class TodayStatusService {
     private final SleepEventRepository sleepEventRepository;
     private final FeedingEventRepository feedingEventRepository;
     private final DiaperEntryRepository diaperEntryRepository;
+    private final CurrentUserService currentUserService;
+
+    public TodayStatusService(BabyRepository babyRepository,
+                              SleepAnalyticsService sleepAnalyticsService,
+                              FeedingAnalyticsService feedingAnalyticsService,
+                              DiaperAnalyticsService diaperAnalyticsService,
+                              SleepEventRepository sleepEventRepository,
+                              FeedingEventRepository feedingEventRepository,
+                              DiaperEntryRepository diaperEntryRepository,
+                              CurrentUserService currentUserService) {
+        this.babyRepository = babyRepository;
+        this.sleepAnalyticsService = sleepAnalyticsService;
+        this.feedingAnalyticsService = feedingAnalyticsService;
+        this.diaperAnalyticsService = diaperAnalyticsService;
+        this.sleepEventRepository = sleepEventRepository;
+        this.feedingEventRepository = feedingEventRepository;
+        this.diaperEntryRepository = diaperEntryRepository;
+        this.currentUserService = currentUserService;
+    }
 
     public TodayStatusResponse getTodayStatus(Long babyId, LocalDate date) {
-        Baby baby = babyRepository.findById(babyId).orElse(null);
-        if (baby == null) {
-            return null;
-        }
+        User currentUser = currentUserService.getCurrentUserOrThrow();
 
-        SleepSummaryResponse sleepSummary = sleepAnalyticsService.getDailySummary(babyId, date);
-        FeedingSummaryResponse feedingSummary = feedingAnalyticsService.getDailySummary(babyId, date);
-        DiaperSummaryResponse diaperSummary = diaperAnalyticsService.getDailySummary(babyId, date);
+        Baby baby = babyRepository.findByIdAndUser(babyId, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Ребёнок с id=" + babyId + " не найден или недоступен для текущего пользователя"
+                ));
+
+        SleepSummaryResponse sleepSummary = sleepAnalyticsService.getDailySummary(baby.getId(), date);
+        FeedingSummaryResponse feedingSummary = feedingAnalyticsService.getDailySummary(baby.getId(), date);
+        DiaperSummaryResponse diaperSummary = diaperAnalyticsService.getDailySummary(baby.getId(), date);
 
         SleepEvent lastSleep = sleepEventRepository
                 .findFirstByBabyOrderByStartTimeDesc(baby)

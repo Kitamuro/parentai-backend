@@ -2,24 +2,29 @@ package ai.parent.parentaibackend.tracking.diaper;
 
 import ai.parent.parentaibackend.baby.Baby;
 import ai.parent.parentaibackend.baby.BabyRepository;
-import ai.parent.parentaibackend.common.ResourceNotFoundException;
+import ai.parent.parentaibackend.common.exception.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.diaper.dto.CreateDiaperEntryRequest;
 import ai.parent.parentaibackend.user.CurrentUserService;
 import ai.parent.parentaibackend.user.User;
-import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
-@AllArgsConstructor
 public class DiaperEntryService {
 
     private final BabyRepository babyRepository;
     private final DiaperEntryRepository diaperEntryRepository;
     private final CurrentUserService currentUserService;
+
+    public DiaperEntryService(BabyRepository babyRepository,
+                              DiaperEntryRepository diaperEntryRepository,
+                              CurrentUserService currentUserService) {
+        this.babyRepository = babyRepository;
+        this.diaperEntryRepository = diaperEntryRepository;
+        this.currentUserService = currentUserService;
+    }
 
     public DiaperEntry createDiaperEntry(Long babyId, CreateDiaperEntryRequest request) {
         User currentUser = currentUserService.getCurrentUserOrThrow();
@@ -48,12 +53,12 @@ public class DiaperEntryService {
     public List<DiaperEntry> getDiaperEntries(Long babyId,
                                               LocalDateTime from,
                                               LocalDateTime to) {
-        Optional<Baby> babyOpt = babyRepository.findById(babyId);
-        if (babyOpt.isEmpty()) {
-            return null;
-        }
+        User currentUser = currentUserService.getCurrentUserOrThrow();
 
-        Baby baby = babyOpt.get();
+        Baby baby = babyRepository.findByIdAndUser(babyId, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Ребёнок с id=" + babyId + " не найден или недоступен для текущего пользователя"
+                ));
 
         if (from != null && to != null) {
             return diaperEntryRepository
