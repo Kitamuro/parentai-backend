@@ -2,7 +2,10 @@ package ai.parent.parentaibackend.tracking.diaper;
 
 import ai.parent.parentaibackend.baby.Baby;
 import ai.parent.parentaibackend.baby.BabyRepository;
+import ai.parent.parentaibackend.common.exception.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.diaper.dto.DiaperSummaryResponse;
+import ai.parent.parentaibackend.user.CurrentUserService;
+import ai.parent.parentaibackend.user.User;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,12 +19,15 @@ public class DiaperAnalyticsService {
 
     private final BabyRepository babyRepository;
     private final DiaperEntryRepository diaperEntryRepository;
+    private final CurrentUserService currentUserService;
 
     public DiaperSummaryResponse getDailySummary(Long babyId, LocalDate date) {
-        Baby baby = babyRepository.findById(babyId).orElse(null);
-        if (baby == null) {
-            return null;
-        }
+        User currentUser = currentUserService.getCurrentUserOrThrow();
+
+        Baby baby = babyRepository.findByIdAndUser(babyId, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Ребёнок с id=" + babyId + " не найден или недоступен для текущего пользователя"
+                ));
 
         LocalDateTime from = date.atStartOfDay();
         LocalDateTime to = date.plusDays(1).atStartOfDay().minusNanos(1);
@@ -52,3 +58,4 @@ public class DiaperAnalyticsService {
         );
     }
 }
+

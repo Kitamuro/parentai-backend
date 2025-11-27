@@ -1,6 +1,7 @@
 package ai.parent.parentaibackend.baby;
 
 import ai.parent.parentaibackend.user.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,6 +30,7 @@ public class Baby {
 
     private String notes;
 
+    @JsonIgnore
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id")
     private User user;

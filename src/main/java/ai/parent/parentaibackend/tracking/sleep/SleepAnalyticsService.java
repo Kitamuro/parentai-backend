@@ -2,7 +2,10 @@ package ai.parent.parentaibackend.tracking.sleep;
 
 import ai.parent.parentaibackend.baby.Baby;
 import ai.parent.parentaibackend.baby.BabyRepository;
+import ai.parent.parentaibackend.common.exception.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.sleep.dto.SleepSummaryResponse;
+import ai.parent.parentaibackend.user.CurrentUserService;
+import ai.parent.parentaibackend.user.User;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,14 +17,18 @@ import java.util.List;
 @Service
 @AllArgsConstructor
 public class SleepAnalyticsService {
+
     private final BabyRepository babyRepository;
     private final SleepEventRepository sleepEventRepository;
+    private final CurrentUserService currentUserService;
 
     public SleepSummaryResponse getDailySummary(Long babyId, LocalDate date) {
-        Baby baby = babyRepository.findById(babyId).orElse(null);
-        if (baby == null) {
-            return null;
-        }
+        User currentUser = currentUserService.getCurrentUserOrThrow();
+
+        Baby baby = babyRepository.findByIdAndUser(babyId, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Ребёнок с id=" + babyId + " не найден или недоступен для текущего пользователя"
+                ));
 
         LocalDateTime from = date.atStartOfDay();
         LocalDateTime to = date.plusDays(1).atStartOfDay().minusNanos(1);
@@ -34,13 +41,9 @@ public class SleepAnalyticsService {
         long nightMinutes = 0;
 
         for (SleepEvent event : events) {
-            // если сон ещё не завершён (endTime == null), пока игнорируем
-            if (event.getEndTime() == null) {
-                continue;
-            }
+            if (event.getEndTime() == null) continue;
 
             long minutes = Duration.between(event.getStartTime(), event.getEndTime()).toMinutes();
-
             totalMinutes += minutes;
 
             if (event.getType() == SleepType.DAY) {
