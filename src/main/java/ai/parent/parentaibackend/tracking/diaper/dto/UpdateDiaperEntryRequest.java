@@ -1,19 +1,14 @@
 package ai.parent.parentaibackend.tracking.diaper.dto;
 
 import ai.parent.parentaibackend.tracking.diaper.DiaperType;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-public class CreateDiaperEntryRequest {
+public class UpdateDiaperEntryRequest {
 
-    @NotNull(message = "Время события обязательно")
     private LocalDateTime time;
-
-    @NotNull(message = "Тип обязательно (WET/STOOL/MIXED)")
     private DiaperType type;
-
     private String notes;
 }

@@ -1,6 +1,8 @@
 package ai.parent.parentaibackend.baby;
 
 import ai.parent.parentaibackend.baby.dto.CreateBabyRequest;
+import ai.parent.parentaibackend.baby.dto.UpdateBabyRequest;
+import ai.parent.parentaibackend.common.exception.ResourceNotFoundException;
 import ai.parent.parentaibackend.user.CurrentUserService;
 import ai.parent.parentaibackend.user.User;
 import lombok.AllArgsConstructor;
@@ -43,5 +45,40 @@ public class BabyService {
     public Optional<Baby> getBabyById(Long id) {
         User currentUser = currentUserService.getCurrentUserOrThrow();
         return babyRepository.findByIdAndUser(id, currentUser);
+    }
+
+    public Baby updateBaby(Long id, UpdateBabyRequest request) {
+        User currentUser = currentUserService.getCurrentUserOrThrow();
+
+        Baby baby = babyRepository.findByIdAndUser(id, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Ребёнок с id=" + id + " не найден у текущего пользователя"
+                ));
+
+        if (request.getName() != null && !request.getName().isBlank()) {
+            baby.setName(request.getName());
+        }
+        if (request.getDateOfBirth() != null) {
+            baby.setDateOfBirth(request.getDateOfBirth());
+        }
+        if (request.getGender() != null) {
+            baby.setGender(request.getGender());
+        }
+        if (request.getNotes() != null) {
+            baby.setNotes(request.getNotes());
+        }
+
+        return babyRepository.save(baby);
+    }
+
+    public void deleteBaby(Long id) {
+        User currentUser = currentUserService.getCurrentUserOrThrow();
+
+        Baby baby = babyRepository.findByIdAndUser(id, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Ребёнок с id=" + id + " не найден у текущего пользователя"
+                ));
+
+        babyRepository.delete(baby);
     }
 }

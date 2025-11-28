@@ -3,7 +3,10 @@ package ai.parent.parentaibackend.tracking.sleep;
 
 import ai.parent.parentaibackend.common.exception.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.sleep.dto.CreateSleepEventRequest;
+import ai.parent.parentaibackend.tracking.sleep.dto.SleepEventResponse;
 import ai.parent.parentaibackend.tracking.sleep.dto.SleepSummaryResponse;
+import ai.parent.parentaibackend.tracking.sleep.dto.UpdateSleepEventRequest;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -24,59 +27,62 @@ public class SleepEventController {
 
     // Создать событие сна
     @PostMapping
-    public ResponseEntity<?> createSleepEvent(
+    public ResponseEntity<SleepEventResponse> createSleepEvent(
             @PathVariable Long babyId,
-            @RequestBody CreateSleepEventRequest request
+            @Valid @RequestBody CreateSleepEventRequest request
     ) {
-        try {
-            SleepEvent saved = sleepEventService.createSleepEvent(babyId, request);
-            return ResponseEntity.ok(saved);
-        } catch (ResourceNotFoundException e) {
-            // ребёнок не найден или не принадлежит этому юзеру
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            // ошибка валидации входных данных
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        SleepEvent saved = sleepEventService.createSleepEvent(babyId, request);
+        return ResponseEntity.ok(SleepEventMapper.toResponse(saved));
     }
 
     // Получить список событий сна (все или за интервал)
     @GetMapping
-    public ResponseEntity<?> getSleepEvents(
+    public List<SleepEventResponse> getSleepEvents(
             @PathVariable Long babyId,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime from,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime to
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
     ) {
-        try {
-            List<SleepEvent> events = sleepEventService.getSleepEvents(babyId, from, to);
-            return ResponseEntity.ok(events);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        return sleepEventService.getSleepEvents(babyId, from, to)
+                .stream()
+                .map(SleepEventMapper::toResponse)
+                .toList();
     }
 
     // Сводка сна за день
     @GetMapping("/summary")
-    public ResponseEntity<?> getDailySummary(
+    public ResponseEntity<SleepSummaryResponse> getDailySummary(
             @PathVariable Long babyId,
             @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate date
     ) {
-        try {
-            SleepSummaryResponse summary = sleepAnalyticsService.getDailySummary(babyId, date);
-            if (summary == null) {
-                // если внутри AnalyticsService нет такой проверки — можно вызывать туда currentUser в будущем
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Сводка сна для ребёнка с id=" + babyId + " не найдена");
-            }
-            return ResponseEntity.ok(summary);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        SleepSummaryResponse summary = sleepAnalyticsService.getDailySummary(babyId, date);
+
+        if (summary == null) {
+            // Отдаём 404 — дальше GlobalExceptionHandler всё красиво обернёт
+            throw new ResourceNotFoundException(
+                    "Сводка сна для ребёнка с id=" + babyId + " не найдена"
+            );
         }
+        return ResponseEntity.ok(summary);
+    }
+
+    @PatchMapping("/{eventId}")
+    public ResponseEntity<SleepEventResponse> updateSleepEvent(
+            @PathVariable Long babyId,
+            @PathVariable Long eventId,
+            @RequestBody UpdateSleepEventRequest request
+    ) {
+        SleepEvent updated = sleepEventService.updateSleepEvent(babyId, eventId, request);
+        return ResponseEntity.ok(SleepEventMapper.toResponse(updated));
+    }
+
+    @DeleteMapping("/{eventId}")
+    public ResponseEntity<Void> deleteSleepEvent(
+            @PathVariable Long babyId,
+            @PathVariable Long eventId
+    ) {
+        sleepEventService.deleteSleepEvent(babyId, eventId);
+        return ResponseEntity.noContent().build();
     }
 }

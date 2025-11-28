@@ -1,9 +1,11 @@
 package ai.parent.parentaibackend.tracking.diaper;
 
-import ai.parent.parentaibackend.common.exception.ResourceNotFoundException;
 import ai.parent.parentaibackend.tracking.diaper.dto.CreateDiaperEntryRequest;
+import ai.parent.parentaibackend.tracking.diaper.dto.DiaperEntryResponse;
+import ai.parent.parentaibackend.tracking.diaper.dto.UpdateDiaperEntryRequest;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,44 +14,48 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/babies/{babyId}/diaper-entries")
+@AllArgsConstructor
 public class DiaperEntryController {
 
     private final DiaperEntryService diaperEntryService;
 
-    public DiaperEntryController(DiaperEntryService diaperEntryService) {
-        this.diaperEntryService = diaperEntryService;
-    }
-
     @PostMapping
-    public ResponseEntity<?> createDiaperEntry(
+    public ResponseEntity<DiaperEntryResponse> createDiaperEntry(
             @PathVariable Long babyId,
-            @RequestBody CreateDiaperEntryRequest request
+            @Valid @RequestBody CreateDiaperEntryRequest request
     ) {
-        try {
-            DiaperEntry saved = diaperEntryService.createDiaperEntry(babyId, request);
-            return ResponseEntity.ok(saved);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        DiaperEntry saved = diaperEntryService.createDiaperEntry(babyId, request);
+        return ResponseEntity.ok(DiaperEntryMapper.toResponse(saved));
     }
 
     @GetMapping
-    public ResponseEntity<?> getDiaperEntries(
+    public List<DiaperEntryResponse> getDiaperEntries(
             @PathVariable Long babyId,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime from,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime to
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
     ) {
-        try {
-            List<DiaperEntry> entries = diaperEntryService.getDiaperEntries(babyId, from, to);
-            return ResponseEntity.ok(entries);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        return diaperEntryService.getDiaperEntries(babyId, from, to)
+                .stream()
+                .map(DiaperEntryMapper::toResponse)
+                .toList();
+    }
+
+    @PatchMapping("/{entryId}")
+    public ResponseEntity<DiaperEntryResponse> updateDiaperEntry(
+            @PathVariable Long babyId,
+            @PathVariable Long entryId,
+            @RequestBody UpdateDiaperEntryRequest request
+    ) {
+        DiaperEntry updated = diaperEntryService.updateDiaperEntry(babyId, entryId, request);
+        return ResponseEntity.ok(DiaperEntryMapper.toResponse(updated));
+    }
+
+    @DeleteMapping("/{entryId}")
+    public ResponseEntity<Void> deleteDiaperEntry(
+            @PathVariable Long babyId,
+            @PathVariable Long entryId
+    ) {
+        diaperEntryService.deleteDiaperEntry(babyId, entryId);
+        return ResponseEntity.noContent().build();
     }
 }

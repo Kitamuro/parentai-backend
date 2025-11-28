@@ -1,21 +1,18 @@
 package ai.parent.parentaibackend.tracking.sleep.dto;
 
 import ai.parent.parentaibackend.tracking.sleep.SleepType;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * Частичное обновление события сна.
+ */
 @Data
-public class CreateSleepEventRequest {
+public class UpdateSleepEventRequest {
 
-    @NotNull(message = "Время начала сна обязательно")
     private LocalDateTime startTime;
-
     private LocalDateTime endTime;
-
-    @NotNull(message = "Тип сна обязателен (DAY или NIGHT)")
     private SleepType type;
-
     private String notes;
 }

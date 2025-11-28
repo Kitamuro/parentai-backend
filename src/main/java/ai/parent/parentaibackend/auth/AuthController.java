@@ -5,6 +5,7 @@ import ai.parent.parentaibackend.auth.dto.LoginRequest;
 import ai.parent.parentaibackend.auth.dto.RegisterRequest;
 import ai.parent.parentaibackend.user.CustomUserDetails;
 import ai.parent.parentaibackend.user.User;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,7 @@ public class AuthController {
     private final JwtService jwtService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
             User saved = authService.register(request);
             return ResponseEntity.ok("OK");
@@ -31,7 +32,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
             CustomUserDetails userDetails = authService.authenticate(request);
             String token = jwtService.generateToken(userDetails);
